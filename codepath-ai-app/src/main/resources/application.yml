@@ -1,0 +1,5 @@
+spring:
+  config:
+    name: ai-agent-archetype-app
+  profiles:
+    active: dev

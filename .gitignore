@@ -1,0 +1,41 @@
+# Maven / Java build output
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Local configuration and secrets
+**/application-local.yml
+.env
+.env.*
+!.env.example
+
+# Sensitive API test files (do not upload keys or local fixtures)
+/codepath-ai-app/src/test/java/com/superd/test/api/**
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/
+.factorypath
+.springBeans
+
+# Application logs
+**/data/log/
+*.log
+
+# Temporary and system files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+
+#agent settings
+/codepath-ai-app/src/main/resources/agent/
