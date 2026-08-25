@@ -1,0 +1,48 @@
+server:
+  port: 8091
+
+# 本地敏感配置，不提交到 Git
+step-key:
+
+# 线程池配置
+thread:
+  pool:
+    executor:
+      config:
+        core-pool-size:
+        max-pool-size:
+        keep-alive-time:
+        block-queue-size:
+        policy:
+
+# 数据库配置；启动时配置数据库资源信息
+spring:
+  config:
+    import:
+
+  datasource:
+    url:
+    username:
+    password:
+    driver-class-name:
+    hikari:
+      maximum-pool-size:
+      minimum-idle:
+      connection-timeout:
+
+#     MyBatis 配置【如需使用记得打开】
+mybatis:
+  mapper-locations:
+  config-location:
+
+logging:
+  level:
+    root:
+  config:
+
+test:
+  ssh:
+    host:
+    username:
+    password:
+    password-encrypted-key:

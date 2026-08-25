@@ -1,1 +1,0 @@
-package com.superd.domain.ssh;

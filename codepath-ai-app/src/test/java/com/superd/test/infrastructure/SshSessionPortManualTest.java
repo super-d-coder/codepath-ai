@@ -6,82 +6,70 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Console;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 
 /**
  * 手动交互式 SSH 集成测试。
  * 说明：
- * 1. 这是一个本地调试/验证用例，不是单元测试，依赖真实 SSH 服务器和真实密码；
- * 2. 运行前必须把 HOST / USERNAME / PASSWORD 换成你自己的机器信息；
- * 3. 该用例会直接打开终端读取密码，并持续执行远程命令，不能在 CI / 自动化环境中直接跑；
+ * 1. 这是一个本地调试/验证用例，不是单元测试，依赖真实 SSH 服务器；
+ * 2. 连接信息从 application-local.yml 的 test.ssh.* 读取，无需在代码里硬编码；
+ * 3. 该用例会持续执行远程命令，不能在 CI / 自动化环境中直接跑；
  * 4. 若运行失败，常见原因包括：服务器未开启 SSH、端口不对、密码错误、或远端拒绝交互式认证。
  */
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class SshSessionPortManualTest {
 
-    /**
-     * 这里的 IP、账号要换成你自己的云服务器；
-     */
-    // 这几个值需要替换成真实环境：
-    // HOST：远端 Linux 机器 IP 或域名
-    // PORT：SSH 端口，通常是 22
-    // USERNAME：可登录的用户名，如 ubuntu、root
-    // CONNECTION_ID：当前进程内用于缓存 Session 的唯一标识
-    private static final String HOST = "192.144.135.128";
-    private static final int PORT = 22;
-    private static final String USERNAME = "ubuntu";
-    private static final String CONNECTION_ID = "manual-ssh-test";
+    @Value("${test.ssh.host}")
+    private String host;
+
+    @Value("${test.ssh.username}")
+    private String username;
+
+    @Value("${test.ssh.password}")
+    private String password;
+
+    @Value("${test.ssh.port:22}")
+    private int port;
+
+    @Value("${test.ssh.connection-id:manual-ssh-test}")
+    private String connectionId;
 
     @Test
     public void test_connect_and_execute_commands_interactively() throws Exception {
-        // 这个测试是“手动验证”场景，而不是自动化断言用例。
-        // 在 CI 环境下通常不应执行，因为它依赖终端输入密码和真实远程机器。
         runInteractiveDemo();
     }
 
-    public static void main(String[] args) throws Exception {
-        // IDE 直接运行 main() 时，也会走这一套交互式流程。
-        runInteractiveDemo();
-    }
-
-    private static void runInteractiveDemo() throws Exception {
-        // 注意：这里实例化的是基础实现类，不走 Spring 容器。
-        // 若要在业务代码中复用 SSH 能力，建议通过应用层服务/端口做封装。
+    private void runInteractiveDemo() throws Exception {
+        // 这里直接实例化实现类，不依赖容器内缓存，便于单次手工验证。
         SshSessionPort sshSessionPort = new SshSessionPort();
-        String password = readPasswordFromConsole();
 
-        Assert.assertTrue("密码不能为空", password != null && !password.isBlank());
+        Assert.assertTrue("host 不能为空，请配置 test.ssh.host", host != null && !host.isBlank());
+        Assert.assertTrue("username 不能为空，请配置 test.ssh.username", username != null && !username.isBlank());
+        Assert.assertTrue("password 不能为空，请配置 test.ssh.password", password != null && !password.isBlank());
 
         boolean connected = sshSessionPort.connect(
-                CONNECTION_ID, HOST, PORT, USERNAME, password, null);
-        Assert.assertTrue("SSH 连接失败，请检查 IP、账号或密码是否正确", connected);
+                connectionId, host, port, username, password, null);
+        Assert.assertTrue("SSH 连接失败，请检查 test.ssh 配置是否正确", connected);
 
         try {
-            Session session = sshSessionPort.getSession(CONNECTION_ID);
+            Session session = sshSessionPort.getSession(connectionId);
             Assert.assertNotNull("未获取到 SSH Session", session);
 
             printConnectionBanner(session);
             printCommandResult(executeCommand(session, "hostname && whoami && pwd"));
             interactiveCommandLoop(session);
         } finally {
-            sshSessionPort.disconnect(CONNECTION_ID);
+            sshSessionPort.disconnect(connectionId);
             System.out.println("\nSSH 连接已关闭。");
         }
-    }
-
-    @SuppressWarnings("resource")
-    private static String readPasswordFromConsole() {
-        Console console = System.console();
-        if (console != null) {
-            char[] password = console.readPassword("请输入云服务器密码: ");
-            return password == null ? null : new String(password);
-        }
-        System.out.print("请输入云服务器密码: ");
-        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
-        return scanner.nextLine();
     }
 
     private static void printConnectionBanner(Session session) {
