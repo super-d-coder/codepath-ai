@@ -2,6 +2,7 @@ package com.superd.infrastructure.security;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
@@ -15,30 +16,23 @@ import java.util.Base64;
  * 使用 AES-256-GCM 对称加密，密钥从环境变量或默认值读取
  */
 @Slf4j
+@Component
 public class PasswordEncryptor {
 
     private static final String ALGORITHM = "AES/GCM/NoPadding";
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
-
-    /** 默认密钥（生产环境务必通过环境变量覆盖） */
-    @Value("${test.ssh.password-encrypted-key:your_encrypted_password_key}")
-    private  String DEFAULT_SECRET_KEY;
+    private static final String FALLBACK_SECRET_KEY = "your_encrypted_password_key";
 
     private final SecretKeySpec keySpec;
 
-    public PasswordEncryptor() {
-        this(null);
-    }
-
-    public PasswordEncryptor(String secretKey) {
+    public PasswordEncryptor(
+            @Value("${test.ssh.password-encrypted-key:your_encrypted_password_key}")
+            String secretKey) {
         String key = secretKey;
         if (key == null || key.isBlank()) {
-            key = System.getenv("WALISSH_SECRET_KEY");
-        }
-        if (key == null || key.isBlank()) {
-            key = DEFAULT_SECRET_KEY;
-            log.warn("未配置 WALISSH_SECRET_KEY 环境变量，使用默认密钥，生产环境请务必配置！");
+            key = FALLBACK_SECRET_KEY;
+            log.warn("未配置 SSH 加密密钥，使用默认密钥，生产环境请务必配置！");
         }
         // 确保密钥长度为 32 字节（AES-256）
         byte[] keyBytes = padOrTrim(key.getBytes(StandardCharsets.UTF_8), 32);

@@ -10,7 +10,6 @@ import com.superd.infrastructure.dao.ISshConnectionDAO;
 import com.superd.infrastructure.dao.po.SshConnectionConfigPO;
 import com.superd.infrastructure.dao.po.SshConnectionPO;
 import com.superd.infrastructure.security.PasswordEncryptor;
-import jakarta.annotation.Resource;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -23,12 +22,17 @@ import java.util.stream.Collectors;
 @Repository
 public class SshConnectionRepository implements ISshConnectionRepository {
 
-    @Resource
-    private ISshConnectionDAO sshConnectionDAO;
-    @Resource
-    private ISshConnectionConfigDAO sshConnectionConfigDAO;
+    private final ISshConnectionDAO sshConnectionDAO;
+    private final ISshConnectionConfigDAO sshConnectionConfigDAO;
+    private final PasswordEncryptor passwordEncryptor;
 
-    private final PasswordEncryptor passwordEncryptor = new PasswordEncryptor();
+    public SshConnectionRepository(ISshConnectionDAO sshConnectionDAO,
+                                   ISshConnectionConfigDAO sshConnectionConfigDAO,
+                                   PasswordEncryptor passwordEncryptor) {
+        this.sshConnectionDAO = sshConnectionDAO;
+        this.sshConnectionConfigDAO = sshConnectionConfigDAO;
+        this.passwordEncryptor = passwordEncryptor;
+    }
 
     @Override
     public void saveConnection(SshConnectionEntity entity) {
