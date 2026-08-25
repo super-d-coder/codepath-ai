@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superd.infrastructure.dao.INewsItemDAO">
+    <resultMap id="NewsItemMap" type="com.superd.infrastructure.dao.po.NewsItemPO">
+        <id column="id" property="id"/><result column="external_id" property="externalId"/>
+        <result column="title" property="title"/><result column="url" property="url"/>
+        <result column="author" property="author"/><result column="summary" property="summary"/>
+        <result column="source" property="source"/><result column="published_at" property="publishedAt"/>
+        <result column="collected_at" property="collectedAt"/>
+    </resultMap>
+    <insert id="saveIgnoreDuplicate" parameterType="com.superd.infrastructure.dao.po.NewsItemPO">
+        INSERT IGNORE INTO infoflow_news_item (external_id, title, url, author, summary, source, published_at, collected_at)
+        VALUES (#{externalId}, #{title}, #{url}, #{author}, #{summary}, #{source}, #{publishedAt}, #{collectedAt})
+    </insert>
+    <select id="queryLatest" resultMap="NewsItemMap">
+        SELECT id, external_id, title, url, author, summary, source, published_at, collected_at
+        FROM infoflow_news_item <where><if test="source != null and source != ''">source = #{source}</if></where>
+        ORDER BY published_at DESC, collected_at DESC LIMIT #{limit}
+    </select>
+</mapper>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.superd.infrastructure.dao.IHotRepoDAO">
+    <resultMap id="HotRepoMap" type="com.superd.infrastructure.dao.po.HotRepoPO">
+        <id column="id" property="id"/>
+        <result column="repo_full_name" property="fullName"/><result column="repo_name" property="name"/>
+        <result column="description" property="description"/><result column="html_url" property="htmlUrl"/>
+        <result column="stars" property="stars"/><result column="forks" property="forks"/>
+        <result column="language" property="language"/><result column="topics" property="topics"/>
+        <result column="source" property="source"/><result column="published_at" property="publishedAt"/>
+        <result column="collected_date" property="collectedDate"/><result column="collected_at" property="collectedAt"/>
+    </resultMap>
+    <insert id="saveOrUpdate" parameterType="com.superd.infrastructure.dao.po.HotRepoPO">
+        INSERT INTO infoflow_hot_repo (repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at)
+        VALUES (#{fullName}, #{name}, #{description}, #{htmlUrl}, #{stars}, #{forks}, #{language}, #{topics}, #{source}, #{publishedAt}, #{collectedDate}, #{collectedAt})
+        ON DUPLICATE KEY UPDATE description = VALUES(description), html_url = VALUES(html_url), stars = VALUES(stars), forks = VALUES(forks), language = VALUES(language), topics = VALUES(topics), collected_at = VALUES(collected_at)
+    </insert>
+    <select id="queryLatest" resultMap="HotRepoMap">
+        SELECT id, repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at
+        FROM infoflow_hot_repo <where><if test="language != null and language != ''">language = #{language}</if></where>
+        ORDER BY collected_at DESC, stars DESC LIMIT #{limit}
+    </select>
+</mapper>

@@ -11,6 +11,11 @@
 
     <packaging>jar</packaging>
 
+    <properties>
+        <!-- 普通 package 默认跳过历史集成测试；显式 -Dskip.tests=false 才执行。 -->
+        <skip.tests>true</skip.tests>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -59,6 +64,12 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- 现有测试使用 JUnit 4；让 Spring Boot 的 JUnit Platform 也能发现并执行它们。 -->
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -178,9 +189,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.6</version>
+                <version>3.5.2</version>
                 <configuration>
-                    <skipTests>true</skipTests>
+                    <!-- 默认保持历史行为：普通 package 不执行测试；显式使用 -Dskip.tests=false 执行 JUnit。 -->
+                    <skipTests>${skip.tests}</skipTests>
                     <testFailureIgnore>false</testFailureIgnore>
                     <includes>
                         <include>**/*Test.java</include>
