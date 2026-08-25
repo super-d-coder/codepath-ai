@@ -213,6 +213,14 @@ codepath-ai-app/src/main/resources/application-local.yml
 
 不要将真实密码和 Token 提交到 Git。
 
+### InfoFlow 实际配置
+
+`application-local.yml` 已提供 InfoFlow 默认配置：GitHub Search API、Hacker News Firebase API、GitHub 近 14 天窗口、每源 30 条以及 GitHub 每 6 小时/Hacker News 每 2 小时的 cron。
+
+- 可选 Token 使用环境变量 `GITHUB_TOKEN` 注入，例如 PowerShell：`$env:GITHUB_TOKEN = "ghp_..."`；未设置时仍可采集，但 GitHub 限流更严格。
+- 根据本机 MySQL 修改 `spring.datasource` 的 URL、用户名和密码；执行 SQL 前先确认目标数据库为 `codepath_ai`。
+- 执行 `doc/sql/infoflow.sql` 后，通过 `POST /api/v1/infoflow/collect/github` 或 `POST /api/v1/infoflow/collect/news` 验证采集；`POST /api/v1/infoflow/collect/all` 始终按 GitHub、Hacker News 顺序执行，某一来源失败不会阻止另一来源，并在返回结果中保留失败信息。
+
 ### 初始化 SQL
 
 执行：
@@ -318,18 +326,17 @@ InfoFlow 只消费统一记忆接口，不独立设计第二套记忆系统。
 
 ## 文档
 
-建议维护以下文档：
+文档总入口：[`doc/README.md`](doc/README.md)。
 
 ```text
 doc/
-├── sql/
-├── architecture/
-├── agent/
-└── infoflow/
+├── README.md                         # 文档索引、阅读顺序和维护约定
+├── 01-项目规范与架构约束.md            # DDD / 六边形架构约束
+├── 02-InfoFlow-MVP开发计划.md          # InfoFlow MVP 范围与设计基线
+├── infoflow/
+│   └── 01-InfoFlow-MVP开发情况.md      # 实际实现、配置、验证与待验收项
+└── sql/
+    └── infoflow.sql                  # InfoFlow MySQL 初始化 SQL
 ```
 
-InfoFlow 开发交接文档包括：
-
-- 项目规范与架构约束；
-- MVP 开发计划；
-- 本 README 草稿。
+InfoFlow 的计划与当前事实分开维护：开发计划保留原始范围，当前实现和验证状态统一记录到 `doc/infoflow/01-InfoFlow-MVP开发情况.md`。参与开发的 Agent 还必须遵循 [`AGENTS.md`](AGENTS.md) 的实时更新规则。
