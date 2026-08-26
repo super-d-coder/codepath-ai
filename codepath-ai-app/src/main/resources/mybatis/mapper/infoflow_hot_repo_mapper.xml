@@ -9,14 +9,23 @@
         <result column="language" property="language"/><result column="topics" property="topics"/>
         <result column="source" property="source"/><result column="published_at" property="publishedAt"/>
         <result column="collected_date" property="collectedDate"/><result column="collected_at" property="collectedAt"/>
+        <result column="readme_content" property="readmeContent"/><result column="readme_url" property="readmeUrl"/>
+        <result column="readme_status" property="readmeStatus"/><result column="readme_fetched_at" property="readmeFetchedAt"/>
     </resultMap>
     <insert id="saveOrUpdate" parameterType="com.superd.infrastructure.dao.po.HotRepoPO">
-        INSERT INTO infoflow_hot_repo (repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at)
-        VALUES (#{fullName}, #{name}, #{description}, #{htmlUrl}, #{stars}, #{forks}, #{language}, #{topics}, #{source}, #{publishedAt}, #{collectedDate}, #{collectedAt})
-        ON DUPLICATE KEY UPDATE description = VALUES(description), html_url = VALUES(html_url), stars = VALUES(stars), forks = VALUES(forks), language = VALUES(language), topics = VALUES(topics), collected_at = VALUES(collected_at)
+        INSERT INTO infoflow_hot_repo (repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at, readme_content, readme_url, readme_status, readme_fetched_at)
+        VALUES (#{fullName}, #{name}, #{description}, #{htmlUrl}, #{stars}, #{forks}, #{language}, #{topics}, #{source}, #{publishedAt}, #{collectedDate}, #{collectedAt}, #{readmeContent}, #{readmeUrl}, #{readmeStatus}, #{readmeFetchedAt})
+        ON DUPLICATE KEY UPDATE description = VALUES(description), html_url = VALUES(html_url), stars = VALUES(stars), forks = VALUES(forks), language = VALUES(language), topics = VALUES(topics), collected_at = VALUES(collected_at), readme_content = VALUES(readme_content), readme_url = VALUES(readme_url), readme_status = VALUES(readme_status), readme_fetched_at = VALUES(readme_fetched_at)
     </insert>
+    <select id="queryById" resultMap="HotRepoMap">
+        SELECT id, repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at, readme_content, readme_url, readme_status, readme_fetched_at
+        FROM infoflow_hot_repo WHERE id = #{id}
+    </select>
+    <delete id="deleteExpired">
+        DELETE FROM infoflow_hot_repo WHERE collected_date &lt; DATE_SUB(CURRENT_DATE, INTERVAL #{retentionDays} DAY)
+    </delete>
     <select id="queryLatest" resultMap="HotRepoMap">
-        SELECT id, repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at
+        SELECT id, repo_full_name, repo_name, description, html_url, stars, forks, language, topics, source, published_at, collected_date, collected_at, readme_url, readme_status, readme_fetched_at
         FROM infoflow_hot_repo <where><if test="language != null and language != ''">language = #{language}</if></where>
         ORDER BY collected_at DESC, stars DESC LIMIT #{limit}
     </select>

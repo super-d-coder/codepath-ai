@@ -3,6 +3,7 @@ package com.superd.trigger.http;
 import com.superd.api.IInfoFlowService;
 import com.superd.api.dto.CollectResponseDTO;
 import com.superd.api.dto.HotRepoResponseDTO;
+import com.superd.api.dto.HotRepoDetailResponseDTO;
 import com.superd.api.dto.NewsItemResponseDTO;
 import com.superd.api.response.Response;
 import com.superd.domain.infoflow.model.entity.HotRepoEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -49,6 +51,21 @@ public class InfoFlowController implements IInfoFlowService {
         List<HotRepoResponseDTO> data = infoFlowDomainService.queryHotRepos(language, safeLimit)
                 .stream().map(this::toHotRepoDTO).collect(Collectors.toList());
         return success(data);
+    }
+
+    @Override
+    @GetMapping("/repos/{id}")
+    public Response<HotRepoDetailResponseDTO> queryHotRepoDetail(@PathVariable("id") Long id) {
+        HotRepoEntity entity = infoFlowDomainService.queryHotRepoDetail(id);
+        if (entity == null) return failure("仓库不存在");
+        HotRepoResponseDTO base = toHotRepoDTO(entity);
+        HotRepoDetailResponseDTO detail = new HotRepoDetailResponseDTO();
+        org.springframework.beans.BeanUtils.copyProperties(base, detail);
+        detail.setReadmeContent(entity.getReadmeContent());
+        detail.setReadmeUrl(entity.getReadmeUrl());
+        detail.setReadmeStatus(entity.getReadmeStatus());
+        detail.setReadmeFetchedAt(entity.getReadmeFetchedAt());
+        return success(detail);
     }
 
     @Override

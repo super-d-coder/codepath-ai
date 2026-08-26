@@ -19,4 +19,8 @@ public class HotRepoPO {
     private LocalDateTime publishedAt;
     private LocalDate collectedDate;
     private LocalDateTime collectedAt;
+    private String readmeContent;
+    private String readmeUrl;
+    private String readmeStatus;
+    private LocalDateTime readmeFetchedAt;
 }

@@ -14,6 +14,7 @@ doc/
 │   └── 02-InfoFlow-API对接文档.md       # 提供给前端工程师的后端接口契约
 └── sql/
     ├── infoflow.sql                  # InfoFlow MySQL 8+ 初始化 SQL
+    ├── infoflow_readme_migration.sql # 已有仓库表补充 README 字段的迁移 SQL
     ├── ssh.sql
     └── ssh_config.sql
 ```

@@ -8,5 +8,7 @@ import java.util.List;
 @Mapper
 public interface IHotRepoDAO {
     int saveOrUpdate(HotRepoPO po);
+    HotRepoPO queryById(@Param("id") long id);
+    int deleteExpired(@Param("retentionDays") int retentionDays);
     List<HotRepoPO> queryLatest(@Param("language") String language, @Param("limit") int limit);
 }

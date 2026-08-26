@@ -2,6 +2,7 @@ package com.superd.api;
 
 import com.superd.api.dto.CollectResponseDTO;
 import com.superd.api.dto.HotRepoResponseDTO;
+import com.superd.api.dto.HotRepoDetailResponseDTO;
 import com.superd.api.dto.NewsItemResponseDTO;
 import com.superd.api.response.Response;
 
@@ -13,6 +14,8 @@ import java.util.List;
 public interface IInfoFlowService {
 
     Response<List<HotRepoResponseDTO>> queryHotRepos(String language, Integer limit);
+
+    Response<HotRepoDetailResponseDTO> queryHotRepoDetail(Long id);
 
     Response<List<NewsItemResponseDTO>> queryNews(String source, Integer limit);
 

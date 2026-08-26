@@ -8,6 +8,7 @@ infoflow:
     token: ${GITHUB_TOKEN:}
     lookback-days: 14
     per-page: 30
+    readme-max-chars: 200000
   hacker-news:
     api-base-url: https://hacker-news.firebaseio.com/v0
     top-story-limit: 30

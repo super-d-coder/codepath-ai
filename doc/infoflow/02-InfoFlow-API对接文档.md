@@ -202,7 +202,60 @@ GET /api/v1/infoflow/repos?language=Java&limit=20
 - `description`、`language`、`topics`、`publishedAt` 可能为 `null`；
 - `topics` 当前不是数组，而是逗号分隔字符串；前端如需标签数组可自行按 `,` 分割并过滤空项。
 
-## 5. 查询 Hacker News 资讯
+## 5. 查询 GitHub 仓库详情
+
+### 5.1 请求
+
+```http
+GET /api/v1/infoflow/repos/{id}
+```
+
+路径参数：
+
+| 参数 | 类型 | 必填 | 说明 |
+|---|---|---:|---|
+| `id` | long | 是 | InfoFlow 仓库记录 ID |
+
+### 5.2 响应
+
+详情响应包含列表字段，并额外返回 README 字段：
+
+```json
+{
+  "code": "0000",
+  "info": "成功",
+  "data": {
+    "id": 1,
+    "fullName": "owner/repository",
+    "name": "repository",
+    "description": "Repository description",
+    "htmlUrl": "https://github.com/owner/repository",
+    "stars": 1000,
+    "forks": 100,
+    "language": "Java",
+    "topics": "spring,ai,java",
+    "source": "github",
+    "publishedAt": "2026-08-20T10:00:00",
+    "collectedAt": "2026-08-25T22:00:00",
+    "readmeContent": "# Repository\\n\\nREADME Markdown 内容",
+    "readmeUrl": "https://github.com/owner/repository#readme",
+    "readmeStatus": "available",
+    "readmeFetchedAt": "2026-08-25T22:00:00"
+  }
+}
+```
+
+`readmeStatus` 当前约定：
+
+- `available`：README 已成功获取；
+- `unavailable`：README 获取失败；
+- `null`：未尝试获取或数据库中没有 README 信息。
+
+README 内容由后端返回原始 Markdown，前端自行选择 Markdown 渲染器。`htmlUrl` 和 `readmeUrl` 可用于提供 GitHub 外链。
+
+记录不存在时返回失败响应，`info` 为“仓库不存在”。
+
+## 6. 查询 Hacker News 资讯
 
 ### 5.1 请求
 
@@ -252,7 +305,7 @@ GET /api/v1/infoflow/news?source=hacker_news&limit=20
 - `author`、`summary`、`publishedAt` 可能为 `null`；
 - Ask HN 等没有外部 URL 的记录，后端会将 `url` 补成 Hacker News item 页面。
 
-## 6. 手动采集 GitHub
+## 7. 手动采集 GitHub
 
 ### 6.1 请求
 
@@ -282,7 +335,7 @@ POST /api/v1/infoflow/collect/github
 }
 ```
 
-## 7. 手动采集 Hacker News
+## 8. 手动采集 Hacker News
 
 ### 7.1 请求
 
@@ -311,7 +364,7 @@ POST /api/v1/infoflow/collect/news
 }
 ```
 
-## 8. 手动采集全部来源
+## 9. 手动采集全部来源
 
 ### 8.1 请求
 
@@ -351,7 +404,7 @@ POST /api/v1/infoflow/collect/all
 }
 ```
 
-## 9. 前端调用参考
+## 10. 前端调用参考
 
 以下代码只展示接口调用，不规定前端状态管理或页面设计：
 
@@ -400,7 +453,7 @@ export const infoflowApi = {
 
 采集后建议由前端工程师根据最终交互方案决定是否重新调用对应 GET 接口。后端不会通过 WebSocket 主动推送刷新结果。
 
-## 10. 后端过程日志
+## 11. 后端过程日志
 
 后端采集接口会在控制台输出可检索的简短过程日志，便于确认请求是否真正进入后端：
 
@@ -414,7 +467,7 @@ Hacker News 使用 `hacker_news` 作为来源标识。外部请求临时失败�
 
 查询接口不会逐条打印数据，避免日志噪声和数据泄漏。
 
-## 11. 错误处理建议
+## 12. 错误处理建议
 
 | 场景 | 前端可观察结果 | 建议 |
 |---|---|---|
@@ -427,15 +480,15 @@ Hacker News 使用 `hacker_news` 作为来源标识。外部请求临时失败�
 | `collect/all` 部分失败 | 数组中部分 `success=false` | 分来源展示结果，不丢弃成功来源 |
 | MySQL 写入失败 | 采集结果 `success=false`，message 描述失败 | 提示后端持久化失败，勿只显示“已抓取” |
 
-## 12. 数据与去重语义
+## 13. 数据与去重语义
 
 - GitHub 热门定义：最近 N 天内创建、按总 Stars 降序的仓库，不等同于 GitHub 网站 Trending 页面；
-- GitHub 表按 `(repo_full_name, collected_date)` 做每日快照，同一天重复采集执行更新；
+- GitHub 表按 `(repo_full_name, collected_date)` 做每日快照，同一天重复采集执行更新；成功且返回非空数据后清理 14 天以前的快照，失败或空结果不清理；
 - Hacker News 按 `(source, external_id)` 去重，重复资讯不重复插入；
 - `savedCount` 是数据库写入语句受影响数量，不等价于页面新增卡片数量；重复采集时其含义受 MySQL upsert/ignore 影响；
 - 前端展示应以随后查询接口返回的数据为准，不应仅根据 `savedCount` 构造列表。
 
-## 13. 当前后端验证边界
+## 14. 当前后端验证边界
 
 已验证：
 
@@ -454,11 +507,11 @@ Hacker News 使用 `hacker_news` 作为来源标识。外部请求临时失败�
 
 前端工程师可以依据本文先完成接口类型和调用封装，但在后端数据库闭环完成前，不应把示例数据视为目标环境的实测响应。
 
-## 14. 编译与参数绑定说明
+## 15. 编译与参数绑定说明
 
 查询接口已显式声明参数名：`language`、`source`、`limit`。前端按本文参数名传递即可，不依赖后端是否使用 Java 编译器 `-parameters` 选项。
 
-## 15. 后端接口变更约定
+## 16. 后端接口变更约定
 
 若后续变更以下内容，后端开发人员必须同步更新本文：
 

@@ -17,5 +17,7 @@ public interface IInfoFlowDomainService {
 
     List<HotRepoEntity> queryHotRepos(String language, int limit);
 
+    HotRepoEntity queryHotRepoDetail(long id);
+
     List<NewsItemEntity> queryNews(String source, int limit);
 }

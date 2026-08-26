@@ -11,5 +11,9 @@ public interface IHotRepoRepository {
 
     int saveOrUpdate(List<HotRepoEntity> entities);
 
+    HotRepoEntity queryById(long id);
+
+    int deleteExpired();
+
     List<HotRepoEntity> queryLatest(String language, int limit);
 }

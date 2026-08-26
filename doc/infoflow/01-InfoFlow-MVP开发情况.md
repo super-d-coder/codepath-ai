@@ -28,7 +28,7 @@ InfoFlow MVP 当前只负责 GitHub 热门仓库与 Hacker News 资讯的采集�
 - `IHotRepoRepository`、`INewsItemRepository`；
 - `IInfoFlowDomainService`、`InfoFlowService`。
 
-`InfoFlowService` 负责采集编排、默认 `source` / `collectedAt`、失败结果和查询 `limit` 保护。
+`InfoFlowService` 负责采集编排、默认 `source` / `collectedAt`、失败结果、查询 `limit` 保护，以及 GitHub 成功采集后的过期快照清理。
 
 ### 2.2 Infrastructure
 
@@ -43,15 +43,18 @@ InfoFlow MVP 当前只负责 GitHub 热门仓库与 Hacker News 资讯的采集�
 
 SQL 文件：`doc/sql/infoflow.sql`
 
-- `infoflow_hot_repo`：按 `(repo_full_name, collected_date)` 做每日快照去重；
+- `infoflow_hot_repo`：按 `(repo_full_name, collected_date)` 做每日快照去重，并保存 README 内容和状态；
 - `infoflow_news_item`：按 `(source, external_id)` 做外部资讯去重；
 - GitHub 写入使用 `ON DUPLICATE KEY UPDATE`；
+- GitHub 采集同步获取 README Markdown，限制最大长度；列表仅返回 README 状态，详情返回正文；
+- GitHub 成功且有数据后清理超过 14 天的快照；失败或空结果不清理旧数据；
 - Hacker News 写入使用 `INSERT IGNORE`；
 - 查询使用显式列、resultMap 和排序字段。
 
 ### 2.4 API 与任务
 
-- `GET /api/v1/infoflow/repos?language=Java&limit=20`；
+- `GET /api/v1/infoflow/repos?language=Java&limit=20`（列表不返回 README 正文）；
+- `GET /api/v1/infoflow/repos/{id}`（详情返回 README Markdown）；
 - `GET /api/v1/infoflow/news?source=hacker_news&limit=20`；
 - `POST /api/v1/infoflow/collect/github`；
 - `POST /api/v1/infoflow/collect/news`；
@@ -148,6 +151,7 @@ mvn -DskipTests package
 - 2026-08-26：联调中 Hacker News 出现 `HTTP connect timed out`。现已增加可配置的连接/请求超时和有限重试，默认额外重试 2 次、间隔 1 秒；最终失败仍返回 `success=false`，不影响其他来源。
 - 2026-08-26：InfoFlow 采集新增 INFO 过程日志，输出来源、开始、获取数量和保存数量；重试输出 WARN，最终失败保留 ERROR 堆栈，不输出 Token 等敏感内容。
 - 2026-08-26：GET 查询接口曾因编译产物不保留参数名，且 `@RequestParam` 未显式指定名称，导致 Spring 抛出 `Name for argument ... not specified`；现已为 `language`、`source`、`limit` 显式声明参数名，避免依赖 `-parameters`。
+- 2026-08-26：GitHub 采集增加 README Markdown 获取、长度限制、状态记录、详情查询和成功后的 14 天过期快照清理；列表接口不返回 README 正文，采集失败或空结果不清理旧数据。
 
 ## 8. 分层测试与运行方式
 

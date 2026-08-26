@@ -46,6 +46,12 @@ public class InfoFlowService implements IInfoFlowDomainService {
             log.info("InfoFlow github 数据获取完成，获取 {} 条", entities.size());
             entities.forEach(entity -> applyDefaults(entity, SourceTypeEnum.GITHUB.getCode()));
             int saved = hotRepoRepository.saveOrUpdate(entities);
+            int deleted = entities.isEmpty() ? 0 : hotRepoRepository.deleteExpired();
+            if (!entities.isEmpty()) {
+                log.info("InfoFlow github 旧数据清理完成，删除 {} 条", deleted);
+            } else {
+                log.warn("InfoFlow github 返回空数据，本次不清理旧数据");
+            }
             log.info("InfoFlow github 采集成功，获取 {} 条，保存 {} 条", entities.size(), saved);
             return result(SourceTypeEnum.GITHUB.getCode(), entities.size(), saved, true, "GitHub 热门仓库采集成功");
         });
@@ -62,6 +68,11 @@ public class InfoFlowService implements IInfoFlowDomainService {
             log.info("InfoFlow hacker_news 采集成功，获取 {} 条，保存 {} 条", entities.size(), saved);
             return result(SourceTypeEnum.HACKER_NEWS.getCode(), entities.size(), saved, true, "行业资讯采集成功");
         });
+    }
+
+    @Override
+    public HotRepoEntity queryHotRepoDetail(long id) {
+        return hotRepoRepository.queryById(id);
     }
 
     @Override

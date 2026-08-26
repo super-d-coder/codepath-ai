@@ -25,4 +25,8 @@ public class HotRepoEntity {
     private String source;
     private LocalDateTime publishedAt;
     private LocalDateTime collectedAt;
+    private String readmeContent;
+    private String readmeUrl;
+    private String readmeStatus;
+    private LocalDateTime readmeFetchedAt;
 }
