@@ -11,7 +11,8 @@ doc/
 ├── 02-InfoFlow-MVP开发计划.md          # InfoFlow MVP 的原始范围与验收计划
 ├── infoflow/
 │   ├── 01-InfoFlow-MVP开发情况.md      # 已落地实现、配置、接口、验证和待验收项
-│   └── 02-InfoFlow-API对接文档.md       # 提供给前端工程师的后端接口契约
+│   ├── 02-InfoFlow-API对接文档.md       # 提供给前端工程师的后端接口契约
+│   └── 03-GitHub-README渲染兼容协同方案.md # 前后端 README 渲染协作基线
 └── sql/
     ├── infoflow.sql                  # InfoFlow MySQL 8+ 初始化 SQL
     ├── infoflow_readme_migration.sql # 已有仓库表补充 README 字段的迁移 SQL

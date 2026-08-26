@@ -4,6 +4,7 @@ import com.superd.domain.infoflow.model.entity.HotRepoEntity;
 import com.superd.infrastructure.adapter.port.GitHubTrendingAdapter;
 import com.superd.infrastructure.config.InfoFlowProperties;
 import com.superd.infrastructure.gateway.infoflow.GitHubApiClient;
+import com.superd.infrastructure.gateway.infoflow.GitHubReadmeNormalizer;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -19,7 +20,7 @@ public class GitHubTrendingAdapterManualTest {
     public void test_fetchTrending_shouldGetRealRepositories() {
         InfoFlowProperties properties = new InfoFlowProperties();
         GitHubApiClient client = new GitHubApiClient(properties);
-        GitHubTrendingAdapter adapter = new GitHubTrendingAdapter(client, properties);
+        GitHubTrendingAdapter adapter = new GitHubTrendingAdapter(client, properties, new GitHubReadmeNormalizer());
 
         List<HotRepoEntity> repos = adapter.fetchTrending();
 

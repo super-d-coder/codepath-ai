@@ -5,6 +5,8 @@
 > 更新时间：2026-08-25
 >
 > 对应计划：`doc/02-InfoFlow-MVP开发计划.md`
+>
+> README 渲染兼容协同方案：`doc/infoflow/03-GitHub-README渲染兼容协同方案.md`（后端第一版已实现）
 
 ## 1. 范围结论
 
@@ -46,7 +48,7 @@ SQL 文件：`doc/sql/infoflow.sql`
 - `infoflow_hot_repo`：按 `(repo_full_name, collected_date)` 做每日快照去重，并保存 README 内容和状态；
 - `infoflow_news_item`：按 `(source, external_id)` 做外部资讯去重；
 - GitHub 写入使用 `ON DUPLICATE KEY UPDATE`；
-- GitHub 采集同步获取 README Markdown，限制最大长度；列表仅返回 README 状态，详情返回正文；
+- GitHub 采集同步获取 README Markdown，限制最大长度；根据默认分支和 README 实际路径规范化相对图片、文档链接及 HTML `src`/`href`；列表不查询 README 正文，详情返回规范化正文；
 - GitHub 成功且有数据后清理超过 14 天的快照；失败或空结果不清理旧数据；
 - Hacker News 写入使用 `INSERT IGNORE`；
 - 查询使用显式列、resultMap 和排序字段。
@@ -192,4 +194,5 @@ mvn -pl codepath-ai-app -am '-Dskip.tests=false' '-Dsurefire.failIfNoSpecifiedTe
 | 2026-08-25 | GitHub / Hacker News 真实 API 测试 | `mvn -pl codepath-ai-app -am '-Dskip.tests=false' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dtest=GitHubTrendingAdapterManualTest,HackerNewsAdapterManualTest' test` | 2 tests passed；GitHub 获取 30 条，Hacker News 获取 29 条 | 本地网络环境 |
 | 待补充 | GitHub 手动采集 REST API | `POST /api/v1/infoflow/collect/github` | URL 编码问题已修复；需重启最新应用后复验数据库写入 | 本地开发环境 |
 | 2026-08-26 | InfoFlow 过程日志与 Hacker News 重试 | 配置连接/请求超时、有限重试和开始/获取/成功日志 | 已实现；离线 9 tests passed；真实 Hacker News 网络复验待执行 | 本地开发环境 |
+| 2026-08-26 | GitHub README 路径规范化 | `GitHubReadmeNormalizerTest,InfoFlowServiceTest,InfoFlowControllerTest` | 15 tests passed；真实 GitHub 样本复验待执行 | 本地开发环境 |
 | 待补充 | MySQL 与 REST 数据闭环 | 见第 6 节 | 待验收 | 待补充 |

@@ -14,4 +14,5 @@ public class GitHubRepoDTO {
     private String language;
     private List<String> topics;
     private String created_at;
+    private String default_branch;
 }

@@ -5,6 +5,8 @@
 > 文档性质：当前后端代码的接口契约。本文只描述数据与调用方式，不约束前端页面、组件、交互或样式设计。
 >
 > 当前验证状态：GitHub/Hacker News 外部采集及 Domain/Controller 单元测试已通过；MySQL 持久化与 REST 数据闭环尚待实测，详见 `doc/infoflow/01-InfoFlow-MVP开发情况.md`。
+>
+> GitHub README 相对资源路径、GFM、HTML 安全渲染和 Tauri 外链协同方案见 `doc/infoflow/03-GitHub-README渲染兼容协同方案.md`；后端路径规范化第一版已实现，GFM/HTML Sanitizer/Tauri 外链仍由前端负责。
 
 ## 1. 基础信息
 
