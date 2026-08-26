@@ -1,6 +1,21 @@
 server:
   port: 8091
 
+# InfoFlow 外部数据源配置
+infoflow:
+  github:
+    api-base-url: https://api.github.com
+    token: ${GITHUB_TOKEN:}
+    lookback-days: 14
+    per-page: 30
+  hacker-news:
+    api-base-url: https://hacker-news.firebaseio.com/v0
+    top-story-limit: 30
+    connect-timeout-seconds: 15
+    request-timeout-seconds: 30
+    max-retries: 2
+    retry-delay-millis: 1000
+
 # 本地敏感配置，不提交到 Git
 step-key:
 

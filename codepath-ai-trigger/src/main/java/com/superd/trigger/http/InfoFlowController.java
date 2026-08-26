@@ -43,8 +43,8 @@ public class InfoFlowController implements IInfoFlowService {
     @Override
     @GetMapping("/repos")
     public Response<List<HotRepoResponseDTO>> queryHotRepos(
-            @RequestParam(required = false) String language,
-            @RequestParam(required = false) Integer limit) {
+            @RequestParam(name = "language", required = false) String language,
+            @RequestParam(name = "limit", required = false) Integer limit) {
         int safeLimit = normalizeLimit(limit);
         List<HotRepoResponseDTO> data = infoFlowDomainService.queryHotRepos(language, safeLimit)
                 .stream().map(this::toHotRepoDTO).collect(Collectors.toList());
@@ -54,8 +54,8 @@ public class InfoFlowController implements IInfoFlowService {
     @Override
     @GetMapping("/news")
     public Response<List<NewsItemResponseDTO>> queryNews(
-            @RequestParam(required = false) String source,
-            @RequestParam(required = false) Integer limit) {
+            @RequestParam(name = "source", required = false) String source,
+            @RequestParam(name = "limit", required = false) Integer limit) {
         int safeLimit = normalizeLimit(limit);
         List<NewsItemResponseDTO> data = infoFlowDomainService.queryNews(source, safeLimit)
                 .stream().map(this::toNewsItemDTO).collect(Collectors.toList());

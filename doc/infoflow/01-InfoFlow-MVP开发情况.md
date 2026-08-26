@@ -92,6 +92,10 @@ infoflow:
   hacker-news:
     api-base-url: https://hacker-news.firebaseio.com/v0
     top-story-limit: 30
+    connect-timeout-seconds: 15
+    request-timeout-seconds: 30
+    max-retries: 2
+    retry-delay-millis: 1000
   schedule:
     github-cron: "0 0 0 */6 * ?"
     news-cron: "0 0 0 */2 * ?"
@@ -141,6 +145,9 @@ mvn -DskipTests package
 ## 7. 已知修复
 
 - 2026-08-25：GitHub Search 查询参数曾仅替换空格与冒号，遗漏编码 `>`，导致 `URI.create()` 抛出 `Illegal character in query`；现已改为 `URLEncoder.encode(value, UTF_8)`，并将空格统一替换为 `%20`。
+- 2026-08-26：联调中 Hacker News 出现 `HTTP connect timed out`。现已增加可配置的连接/请求超时和有限重试，默认额外重试 2 次、间隔 1 秒；最终失败仍返回 `success=false`，不影响其他来源。
+- 2026-08-26：InfoFlow 采集新增 INFO 过程日志，输出来源、开始、获取数量和保存数量；重试输出 WARN，最终失败保留 ERROR 堆栈，不输出 Token 等敏感内容。
+- 2026-08-26：GET 查询接口曾因编译产物不保留参数名，且 `@RequestParam` 未显式指定名称，导致 Spring 抛出 `Name for argument ... not specified`；现已为 `language`、`source`、`limit` 显式声明参数名，避免依赖 `-parameters`。
 
 ## 8. 分层测试与运行方式
 
@@ -180,4 +187,5 @@ mvn -pl codepath-ai-app -am '-Dskip.tests=false' '-Dsurefire.failIfNoSpecifiedTe
 | 2026-08-25 | InfoFlow Domain / Controller 离线测试 | `mvn -pl codepath-ai-app -am '-Dskip.tests=false' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dtest=InfoFlowServiceTest,InfoFlowControllerTest' test` | 9 tests passed | 本地开发环境 |
 | 2026-08-25 | GitHub / Hacker News 真实 API 测试 | `mvn -pl codepath-ai-app -am '-Dskip.tests=false' '-Dsurefire.failIfNoSpecifiedTests=false' '-Dtest=GitHubTrendingAdapterManualTest,HackerNewsAdapterManualTest' test` | 2 tests passed；GitHub 获取 30 条，Hacker News 获取 29 条 | 本地网络环境 |
 | 待补充 | GitHub 手动采集 REST API | `POST /api/v1/infoflow/collect/github` | URL 编码问题已修复；需重启最新应用后复验数据库写入 | 本地开发环境 |
+| 2026-08-26 | InfoFlow 过程日志与 Hacker News 重试 | 配置连接/请求超时、有限重试和开始/获取/成功日志 | 已实现；离线 9 tests passed；真实 Hacker News 网络复验待执行 | 本地开发环境 |
 | 待补充 | MySQL 与 REST 数据闭环 | 见第 6 节 | 待验收 | 待补充 |

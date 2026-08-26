@@ -10,7 +10,8 @@ doc/
 ├── 01-项目规范与架构约束.md            # DDD / 六边形架构、模块和命名约束
 ├── 02-InfoFlow-MVP开发计划.md          # InfoFlow MVP 的原始范围与验收计划
 ├── infoflow/
-│   └── 01-InfoFlow-MVP开发情况.md      # 已落地实现、配置、接口、验证和待验收项
+│   ├── 01-InfoFlow-MVP开发情况.md      # 已落地实现、配置、接口、验证和待验收项
+│   └── 02-InfoFlow-API对接文档.md       # 提供给前端工程师的后端接口契约
 └── sql/
     ├── infoflow.sql                  # InfoFlow MySQL 8+ 初始化 SQL
     ├── ssh.sql

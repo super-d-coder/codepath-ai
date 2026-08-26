@@ -40,20 +40,26 @@ public class InfoFlowService implements IInfoFlowDomainService {
 
     @Override
     public CollectResultVO collectGitHubTrending() {
+        log.info("InfoFlow github 采集开始");
         return collect(SourceTypeEnum.GITHUB, () -> {
             List<HotRepoEntity> entities = safeList(gitHubTrendingPort.fetchTrending());
+            log.info("InfoFlow github 数据获取完成，获取 {} 条", entities.size());
             entities.forEach(entity -> applyDefaults(entity, SourceTypeEnum.GITHUB.getCode()));
             int saved = hotRepoRepository.saveOrUpdate(entities);
+            log.info("InfoFlow github 采集成功，获取 {} 条，保存 {} 条", entities.size(), saved);
             return result(SourceTypeEnum.GITHUB.getCode(), entities.size(), saved, true, "GitHub 热门仓库采集成功");
         });
     }
 
     @Override
     public CollectResultVO collectIndustryNews() {
+        log.info("InfoFlow hacker_news 采集开始");
         return collect(SourceTypeEnum.HACKER_NEWS, () -> {
             List<NewsItemEntity> entities = safeList(industryNewsPort.fetchTopStories());
+            log.info("InfoFlow hacker_news 数据获取完成，获取 {} 条", entities.size());
             entities.forEach(entity -> applyDefaults(entity, SourceTypeEnum.HACKER_NEWS.getCode()));
             int saved = newsItemRepository.saveIgnoreDuplicate(entities);
+            log.info("InfoFlow hacker_news 采集成功，获取 {} 条，保存 {} 条", entities.size(), saved);
             return result(SourceTypeEnum.HACKER_NEWS.getCode(), entities.size(), saved, true, "行业资讯采集成功");
         });
     }
