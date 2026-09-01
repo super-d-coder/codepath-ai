@@ -1,4 +1,4 @@
-package com.superd.infrastructure.adapter.port;
+package com.superd.infrastructure.adapter.port.infoflow;
 
 import com.superd.domain.infoflow.adapter.port.IGitHubTrendingPort;
 import com.superd.domain.infoflow.model.entity.HotRepoEntity;

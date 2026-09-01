@@ -1,11 +1,11 @@
-package com.superd.infrastructure.adapter.repository;
+package com.superd.infrastructure.adapter.repository.infoflow;
 
 import com.superd.domain.infoflow.adapter.repository.IHotRepoRepository;
 import com.superd.domain.infoflow.model.entity.HotRepoEntity;
 import com.superd.infrastructure.dao.IHotRepoDAO;
 import com.superd.infrastructure.dao.po.HotRepoPO;
 import org.springframework.stereotype.Repository;
-import java.time.LocalDate;
+
 import java.util.*;
 import java.util.stream.Collectors;
 

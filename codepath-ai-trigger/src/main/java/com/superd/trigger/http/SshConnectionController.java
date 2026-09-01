@@ -1,8 +1,8 @@
 package com.superd.trigger.http;
 
 import com.superd.api.ISshConnectionService;
-import com.superd.api.dto.SshConnectionRequestDTO;
-import com.superd.api.dto.SshConnectionResponseDTO;
+import com.superd.api.dto.ssh.SshConnectionRequestDTO;
+import com.superd.api.dto.ssh.SshConnectionResponseDTO;
 import com.superd.api.response.Response;
 import com.superd.domain.ssh.model.entity.SshConnectionConfigEntity;
 import com.superd.domain.ssh.model.entity.SshConnectionEntity;

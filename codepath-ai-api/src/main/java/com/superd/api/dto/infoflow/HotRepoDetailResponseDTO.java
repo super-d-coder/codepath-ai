@@ -1,4 +1,4 @@
-package com.superd.api.dto;
+package com.superd.api.dto.infoflow;
 
 import lombok.Data;
 import lombok.EqualsAndHashCode;

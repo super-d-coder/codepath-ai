@@ -1,4 +1,4 @@
-package com.superd.infrastructure.adapter.repository;
+package com.superd.infrastructure.adapter.repository.ssh;
 
 import com.superd.domain.ssh.adapter.repository.ISshConnectionRepository;
 import com.superd.domain.ssh.model.entity.SshConnectionConfigEntity;

@@ -1,6 +1,6 @@
 package com.superd.test.infrastructure;
 
-import com.superd.infrastructure.adapter.port.SshSessionPort;
+import com.superd.infrastructure.adapter.port.ssh.SshSessionPort;
 import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;

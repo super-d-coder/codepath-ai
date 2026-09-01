@@ -1,4 +1,4 @@
-package com.superd.api.dto;
+package com.superd.api.dto.ssh;
 
 import lombok.Data;
 

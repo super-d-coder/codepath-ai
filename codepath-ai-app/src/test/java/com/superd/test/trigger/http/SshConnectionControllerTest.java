@@ -1,7 +1,7 @@
 package com.superd.test.trigger.http;
 
-import com.superd.api.dto.SshConnectionRequestDTO;
-import com.superd.api.dto.SshConnectionResponseDTO;
+import com.superd.api.dto.ssh.SshConnectionRequestDTO;
+import com.superd.api.dto.ssh.SshConnectionResponseDTO;
 import com.superd.api.response.Response;
 import com.superd.domain.ssh.model.entity.SshConnectionEntity;
 import com.superd.domain.ssh.model.valobj.AuthTypeEnum;

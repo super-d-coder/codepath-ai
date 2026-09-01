@@ -1,10 +1,11 @@
-package com.superd.domain.ssh.service;
+package com.superd.domain.ssh.service.impl;
 
 import com.superd.domain.ssh.adapter.port.ISshSessionPort;
 import com.superd.domain.ssh.adapter.repository.ISshConnectionRepository;
 import com.superd.domain.ssh.model.entity.SshConnectionConfigEntity;
 import com.superd.domain.ssh.model.entity.SshConnectionEntity;
 import com.superd.domain.ssh.model.valobj.ConnectionStatusEnum;
+import com.superd.domain.ssh.service.ISshConnectionDomainService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

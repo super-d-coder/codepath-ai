@@ -1,8 +1,8 @@
 package com.superd.test.trigger.http;
 
-import com.superd.api.dto.CollectResponseDTO;
-import com.superd.api.dto.HotRepoResponseDTO;
-import com.superd.api.dto.NewsItemResponseDTO;
+import com.superd.api.dto.infoflow.CollectResponseDTO;
+import com.superd.api.dto.infoflow.HotRepoResponseDTO;
+import com.superd.api.dto.infoflow.NewsItemResponseDTO;
 import com.superd.api.response.Response;
 import com.superd.domain.infoflow.model.entity.HotRepoEntity;
 import com.superd.domain.infoflow.model.entity.NewsItemEntity;

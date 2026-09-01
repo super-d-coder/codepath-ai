@@ -1,4 +1,4 @@
-package com.superd.infrastructure.adapter.repository;
+package com.superd.infrastructure.adapter.repository.infoflow;
 
 import com.superd.domain.infoflow.adapter.repository.INewsItemRepository;
 import com.superd.domain.infoflow.model.entity.NewsItemEntity;

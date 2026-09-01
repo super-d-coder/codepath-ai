@@ -1,7 +1,11 @@
 package com.superd.trigger.http;
 
 import com.superd.api.IAgentService;
-import com.superd.api.dto.*;
+import com.superd.api.dto.agent.AiAgentConfigResponseDTO;
+import com.superd.api.dto.agent.ChatRequestDTO;
+import com.superd.api.dto.agent.ChatResponseDTO;
+import com.superd.api.dto.ssh.CreateSessionRequestDTO;
+import com.superd.api.dto.ssh.CreateSessionResponseDTO;
 import com.superd.api.response.Response;
 import com.superd.domain.agent.model.valobj.AiAgentConfigTableVO;
 import com.superd.domain.agent.service.IChatService;

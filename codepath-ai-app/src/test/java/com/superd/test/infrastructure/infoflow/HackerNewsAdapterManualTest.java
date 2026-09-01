@@ -1,7 +1,7 @@
 package com.superd.test.infrastructure.infoflow;
 
 import com.superd.domain.infoflow.model.entity.NewsItemEntity;
-import com.superd.infrastructure.adapter.port.HackerNewsAdapter;
+import com.superd.infrastructure.adapter.port.infoflow.HackerNewsAdapter;
 import com.superd.infrastructure.config.InfoFlowProperties;
 import com.superd.infrastructure.gateway.infoflow.HackerNewsApiClient;
 import org.junit.Assert;

@@ -1,7 +1,7 @@
 package com.superd.test.infrastructure.infoflow;
 
 import com.superd.domain.infoflow.model.entity.HotRepoEntity;
-import com.superd.infrastructure.adapter.port.GitHubTrendingAdapter;
+import com.superd.infrastructure.adapter.port.infoflow.GitHubTrendingAdapter;
 import com.superd.infrastructure.config.InfoFlowProperties;
 import com.superd.infrastructure.gateway.infoflow.GitHubApiClient;
 import com.superd.infrastructure.gateway.infoflow.GitHubReadmeNormalizer;

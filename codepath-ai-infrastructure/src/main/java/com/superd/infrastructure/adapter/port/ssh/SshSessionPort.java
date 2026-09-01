@@ -1,4 +1,4 @@
-package com.superd.infrastructure.adapter.port;
+package com.superd.infrastructure.adapter.port.ssh;
 
 import com.superd.domain.ssh.adapter.port.ISshSessionPort;
 import com.jcraft.jsch.JSch;

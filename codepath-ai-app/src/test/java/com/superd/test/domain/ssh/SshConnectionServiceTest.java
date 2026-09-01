@@ -6,7 +6,7 @@ import com.superd.domain.ssh.model.entity.SshConnectionConfigEntity;
 import com.superd.domain.ssh.model.entity.SshConnectionEntity;
 import com.superd.domain.ssh.model.valobj.AuthTypeEnum;
 import com.superd.domain.ssh.model.valobj.ConnectionStatusEnum;
-import com.superd.domain.ssh.service.SshConnectionService;
+import com.superd.domain.ssh.service.impl.SshConnectionService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
