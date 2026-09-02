@@ -17,7 +17,12 @@ doc/
     ├── infoflow.sql                  # InfoFlow MySQL 8+ 初始化 SQL
     ├── infoflow_readme_migration.sql # 已有仓库表补充 README 字段的迁移 SQL
     ├── ssh.sql
-    └── ssh_config.sql
+    ├── ssh_config.sql
+    └── ssh/                          # SSH 领域设计文档
+        ├── 01-SSH-连接管理设计文档.md  # SSH 连接管理（历史实现）
+        ├── 02-SSH-终端会话设计文档.md  # SSH 终端交互（本次实现）
+        ├── 03-SSH-终端API对接文档.md   # 前端工程师接口对接文档
+        └── 04-SSH-面试复习文档.md      # 面试前快速复习用
 ```
 
 ## 推荐阅读顺序
