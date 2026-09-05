@@ -48,24 +48,30 @@ public class ChatModelNode extends AbstractArmorySupport {
         log.info("MCP装配开始");
         List<ToolCallback>  toolCallbacks = new ArrayList<>();
         List<AiAgentConfigTableVO.Module.ChatModel.ToolMcp> toolMcpList = chatModelConfig.getToolMcpList();
-        for (AiAgentConfigTableVO.Module.ChatModel.ToolMcp toolMcp : toolMcpList){
-            ToolMcpCreateService tooMcpCreateService = mcpClientFactory.getTooMcpCreateService(toolMcp);
-            ToolCallback[] toolCallback1 = tooMcpCreateService.buildToolCallback(toolMcp);
-            toolCallbacks.addAll(List.of(toolCallback1));
+
+        if (toolMcpList!=null && !toolMcpList.isEmpty()){
+            for (AiAgentConfigTableVO.Module.ChatModel.ToolMcp toolMcp : toolMcpList){
+                ToolMcpCreateService tooMcpCreateService = mcpClientFactory.getTooMcpCreateService(toolMcp);
+                ToolCallback[] toolCallback1 = tooMcpCreateService.buildToolCallback(toolMcp);
+                toolCallbacks.addAll(List.of(toolCallback1));
+            }
         }
+
 
         //4.装载skills
         log.info("Skills装配开始");
         List<AiAgentConfigTableVO.Module.ChatModel.ToolSkills> toolSkillsList = chatModelConfig.getToolSkillsList();
-        toolSkillsList.forEach(toolSkills -> {
-            try {
-                ToolCallback[] toolCallbacks2 = toolSkillsCreateService.buildToolCallback(toolSkills);
-                toolCallbacks.addAll(List.of(toolCallbacks2));
-            } catch (Exception e) {
-                log.error("Skill装载出错");
-                throw new RuntimeException(e.getMessage(),e.getCause());
-            }
-        });
+        if (toolSkillsList!=null && !toolSkillsList.isEmpty()){
+            toolSkillsList.forEach(toolSkills -> {
+                try {
+                    ToolCallback[] toolCallbacks2 = toolSkillsCreateService.buildToolCallback(toolSkills);
+                    toolCallbacks.addAll(List.of(toolCallbacks2));
+                } catch (Exception e) {
+                    log.error("Skill装载出错");
+                    throw new RuntimeException(e.getMessage(),e.getCause());
+                }
+            });
+        }
 
         ChatModel chatModel = OpenAiChatModel.builder()
                 .openAiApi(openAiApi)

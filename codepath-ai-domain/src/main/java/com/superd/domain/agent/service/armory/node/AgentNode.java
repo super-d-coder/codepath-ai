@@ -3,16 +3,19 @@ package com.superd.domain.agent.service.armory.node;
 import cn.bugstack.wrench.design.framework.tree.StrategyHandler;
 import com.google.adk.agents.LlmAgent;
 import com.google.adk.models.springai.SpringAI;
+import com.google.adk.tools.FunctionTool;
 import com.superd.domain.agent.model.entity.ArmoryCommandEntity;
 import com.superd.domain.agent.model.valobj.AiAgentConfigTableVO;
 import com.superd.domain.agent.model.valobj.AiAgentRegisterVO;
 import com.superd.domain.agent.service.armory.AbstractArmorySupport;
 import com.superd.domain.agent.service.armory.factory.DefaultArmoryFactory;
+import com.superd.domain.agent.service.armory.matter.tools.SshExecuteAdkTool;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -21,6 +24,9 @@ public class AgentNode extends AbstractArmorySupport {
 
     @Resource
     private AgentWorkflowNode agentWorkflowNode;
+
+    @Resource
+    private SshExecuteAdkTool  sshExecuteAdkTool;
 
     @Override
     protected AiAgentRegisterVO doApply(ArmoryCommandEntity requestParameter, DefaultArmoryFactory.DynamicContext dynamicContext) throws Exception {
@@ -33,14 +39,37 @@ public class AgentNode extends AbstractArmorySupport {
         List<AiAgentConfigTableVO.Module.Agent> agents = aiAgentConfigTableVO.getModule().getAgents();
 
         for (AiAgentConfigTableVO.Module.Agent agentConfig : agents) {
-            LlmAgent agent = LlmAgent.builder()
+            LlmAgent.Builder llmAgentBuilder = LlmAgent.builder()
                     .name(agentConfig.getName())
                     .description(agentConfig.getDescription())
                     .model(new SpringAI(chatModel))
                     .instruction(agentConfig.getInstruction())
-                    .outputKey(agentConfig.getOutputKey())
-                    .build();
+                    .outputKey(agentConfig.getOutputKey());
 
+            // 构建 ADK 工具列表 - 注意，这部分也可以提炼到配置文件
+            List<FunctionTool> adkTools = new ArrayList<>();
+
+            // 添加 SSH 执行工具（ADK 原生 FunctionTool）
+            try{
+                log.info("开始创建 SSH 执行工具, sshExecuteAdkTool={}", sshExecuteAdkTool);
+                FunctionTool sshTool = FunctionTool.create(sshExecuteAdkTool,"executeCommand");
+                log.info("FunctionTool 创建成功: name={}, declaration={}",
+                        sshTool.name(),
+                        sshTool.declaration().isPresent() ? sshTool.declaration().get() : "null");
+                adkTools.add(sshTool);
+                log.info("为 Agent [{}] 注册 SSH 执行工具成功", agentConfig.getName());
+            }catch (Exception e){
+                log.error("创建 SSH ADK 工具失败", e);
+            }
+
+            // 注册工具到 Agent
+            if(!adkTools.isEmpty()){
+                log.info("为 Agent [{}] 注册 {} 个工具", agentConfig.getName(), adkTools.size());
+                llmAgentBuilder.tools(adkTools);
+            }else {
+                log.warn("Agent [{}] 没有注册任何工具！", agentConfig.getName());
+            }
+            LlmAgent agent = llmAgentBuilder.build();
             dynamicContext.getAgentGroup().put(agentConfig.getName(), agent);
         }
 
