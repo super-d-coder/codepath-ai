@@ -43,6 +43,7 @@ public class AgentWorkflowNode extends AbstractArmorySupport {
             return router(requestParameter, dynamicContext);
         }
 
+        //始值是0
         dynamicContext.setCurrentAgentWorkflow(agentWorkflows.get(dynamicContext.getCurrentStepIndex()));
 
         dynamicContext.addCurrentStepIndex();

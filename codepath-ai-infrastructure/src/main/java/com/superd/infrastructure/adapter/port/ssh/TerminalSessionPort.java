@@ -25,6 +25,9 @@ public class TerminalSessionPort implements ITerminalSessionPort {
     @Resource
     private SshSessionPort sshSessionService;
 
+    /** Shell prompt 检测用的常见标记 */
+    private static final String[] PROMPT_MARKERS = {"$ ", "# ", "% "};
+
     /** sessionId -> Shell 通道 */
     private final Map<String, ChannelShell> channels = new ConcurrentHashMap<>();
 
@@ -36,6 +39,12 @@ public class TerminalSessionPort implements ITerminalSessionPort {
 
     /** sessionId -> 未读输出缓冲区 */
     private final Map<String, StringBuilder> outputBuffers = new ConcurrentHashMap<>();
+
+    /** sessionId -> AI命令执行的独立缓冲区（不受前端轮询影响） */
+    private final Map<String, StringBuilder> aiCommandBuffers = new ConcurrentHashMap<>();
+
+    /** sessionId -> 是否正在执行AI命令（为true时reader写入aiCommandBuffers，否则写入outputBuffers） */
+    private final Map<String, Boolean> aiCommandMode = new ConcurrentHashMap<>();
 
     /** sessionId -> Agent 专用缓冲区（不受前端轮询影响） */
     private final Map<String, StringBuilder> agentBuffers = new ConcurrentHashMap<>();
@@ -184,6 +193,11 @@ public class TerminalSessionPort implements ITerminalSessionPort {
             buffer.setLength(0);
             return output;
         }
+    }
+
+    @Override
+    public String executeCommandAndWait(String sessionId, String command, long timeoutMs) {
+        return "";
     }
 
     @Override

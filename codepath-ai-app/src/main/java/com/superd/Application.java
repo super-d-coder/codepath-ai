@@ -18,6 +18,7 @@ public class Application {
         SpringApplication.run(Application.class);
     }
 
+    //本地mcp服务bean注册，为后期chatmodel组装时创建localmcp使用
     @Bean("myToolCallbackProvider")
     public ToolCallbackProvider testTools(MyTestMcpService testService) {
         return MethodToolCallbackProvider.builder().toolObjects(testService).build();

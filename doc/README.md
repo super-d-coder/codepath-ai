@@ -9,20 +9,26 @@ doc/
 ├── README.md                         # 本索引、阅读顺序和维护约定
 ├── 01-项目规范与架构约束.md            # DDD / 六边形架构、模块和命名约束
 ├── 02-InfoFlow-MVP开发计划.md          # InfoFlow MVP 的原始范围与验收计划
+├── career/                           # 求职主线：交接材料与面试复习文档（非项目功能文档）
+│   ├── 00-求职交接文档.md                # 本人背景、目标、决策与待办的总入口
+│   ├── 01-Agent装配链-面试复习文档.md     # 教材：Agent 装配链的讲法、话术与坦白点
+│   ├── 02-装配链-一页复习卡.md            # 本人笔记：90 秒话术 + 机制/集成对照表
+│   └── 03-会话交接文档.md                # 教与学的进度交接，新会话接手入口
 ├── infoflow/
 │   ├── 01-InfoFlow-MVP开发情况.md      # 已落地实现、配置、接口、验证和待验收项
 │   ├── 02-InfoFlow-API对接文档.md       # 提供给前端工程师的后端接口契约
 │   └── 03-GitHub-README渲染兼容协同方案.md # 前后端 README 渲染协作基线
+├── ssh/                              # SSH 领域设计文档
+│   ├── 01-SSH-连接管理设计文档.md        # SSH 连接管理（历史实现）
+│   ├── 02-SSH-终端会话设计文档.md        # SSH 终端交互（本次实现）
+│   ├── 03-SSH-终端API对接文档.md         # 前端工程师接口对接文档
+│   ├── 04-SSH-面试复习文档.md            # 面试前快速复习用
+│   └── 04-SSH-引入Tool做mvp.md           # SSH 能力封装为 ADK Tool 的 MVP 记录
 └── sql/
     ├── infoflow.sql                  # InfoFlow MySQL 8+ 初始化 SQL
     ├── infoflow_readme_migration.sql # 已有仓库表补充 README 字段的迁移 SQL
     ├── ssh.sql
-    ├── ssh_config.sql
-    └── ssh/                          # SSH 领域设计文档
-        ├── 01-SSH-连接管理设计文档.md  # SSH 连接管理（历史实现）
-        ├── 02-SSH-终端会话设计文档.md  # SSH 终端交互（本次实现）
-        ├── 03-SSH-终端API对接文档.md   # 前端工程师接口对接文档
-        └── 04-SSH-面试复习文档.md      # 面试前快速复习用
+    └── ssh_config.sql
 ```
 
 ## 推荐阅读顺序

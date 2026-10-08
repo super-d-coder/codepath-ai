@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 
 /**
  * 打开终端会话请求
- *
- * @author waissh dev
  */
 @Data
 @Builder

@@ -60,6 +60,7 @@ public class RunnerNode extends AbstractArmorySupport {
 
     @Override
     public StrategyHandler<ArmoryCommandEntity, DefaultArmoryFactory.DynamicContext, AiAgentRegisterVO> get(ArmoryCommandEntity requestParameter, DefaultArmoryFactory.DynamicContext dynamicContext) throws Exception {
+       //并不会到达get，无router直接返回结果
         return defaultStrategyHandler;
     }
 

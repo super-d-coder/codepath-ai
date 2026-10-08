@@ -38,6 +38,10 @@ public class AgentNode extends AbstractArmorySupport {
         AiAgentConfigTableVO aiAgentConfigTableVO = requestParameter.getAiAgentConfigTableVO();
         List<AiAgentConfigTableVO.Module.Agent> agents = aiAgentConfigTableVO.getModule().getAgents();
 
+        /*
+        spring ai只定义底层模型调用和工具mcp，skills接入，adk负责运行时相关，如agent编排，session怎么存，事件流
+        googleadk-springai适配器负责对接
+        */
         for (AiAgentConfigTableVO.Module.Agent agentConfig : agents) {
             LlmAgent.Builder llmAgentBuilder = LlmAgent.builder()
                     .name(agentConfig.getName())
@@ -46,7 +50,6 @@ public class AgentNode extends AbstractArmorySupport {
                     .instruction(agentConfig.getInstruction())
                     .outputKey(agentConfig.getOutputKey());
 
-            // 构建 ADK 工具列表 - 注意，这部分也可以提炼到配置文件
             List<FunctionTool> adkTools = new ArrayList<>();
 
             // 添加 SSH 执行工具（ADK 原生 FunctionTool）

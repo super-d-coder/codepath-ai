@@ -8,8 +8,6 @@ import java.util.List;
 
 /**
  * SSH连接配置DAO
- *
- * @author waissh dev
  */
 @Mapper
 public interface ISshConnectionDAO {

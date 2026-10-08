@@ -10,6 +10,7 @@ import org.springframework.ai.tool.ToolCallback;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
+
 @Service
 public class DefaultToolSkillsCreateService implements ToolSkillsCreateService {
     @Override

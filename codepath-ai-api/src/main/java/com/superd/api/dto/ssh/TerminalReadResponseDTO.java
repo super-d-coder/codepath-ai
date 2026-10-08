@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 
 /**
  * 终端读取响应（返回 Shell 缓冲输出）
- *
- * @author waissh dev
  */
 @Data
 @Builder

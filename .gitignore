@@ -39,4 +39,10 @@ Desktop.ini
 
 #agent settings
 /codepath-ai-app/src/main/resources/agent/
-/doc/ssh/04-SSH-面试复习文档.md
+
+# 求职 / 面试学习类文档（辅助材料，不属于项目产物，不入库）
+/doc/career/
+/doc/ssh/*面试复习文档.md
+
+# Agent 工作记忆
+/.workbuddy/

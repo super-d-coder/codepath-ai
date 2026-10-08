@@ -23,11 +23,15 @@ public class SshExecuteAdkTool {
     // 当前线程的终端会话 ID（使用 InheritableThreadLocal 支持异步线程继承）
     private static final InheritableThreadLocal<String> currentTerminalSession = new InheritableThreadLocal<>();
 
+    /** 当前会话级终端会话ID（由 Controller 设置，优先级低于 ThreadLocal） */
+    private static volatile String sessionTerminalSessionId;
+
     /**
      * 设置当前线程的终端会话 ID（兼容旧接口）
      */
     public static void setCurrentTerminalSession(String terminalSessionId) {
         currentTerminalSession.set(terminalSessionId);
+        sessionTerminalSessionId=terminalSessionId;
         log.info("[ThreadLocal] 设置终端会话: thread={}, terminalSession={}",
                 Thread.currentThread().getName(), terminalSessionId);
     }
@@ -37,6 +41,7 @@ public class SshExecuteAdkTool {
      */
     public static void clearCurrentTerminalSession() {
         currentTerminalSession.remove();
+        sessionTerminalSessionId=null;
     }
 
     public Map<String,Object> executeCommand(
@@ -45,6 +50,12 @@ public class SshExecuteAdkTool {
     ){
         // 优先从 ThreadLocal 获取终端会话ID
         String terminalSessionId = currentTerminalSession.get();
+
+        //如果线程池情况下导致ThreadLocal失效 改用controller设置的会话id
+        if (terminalSessionId == null||terminalSessionId.isEmpty()) {
+            terminalSessionId = sessionTerminalSessionId;
+            log.info("[executeCommand] ThreadLocal 为空，回退到会话级变量: terminalSessionId={}", terminalSessionId);
+        }
         log.info("[executeCommand] thread={}, terminalSessionId={}, command={}",
                 Thread.currentThread().getName(), terminalSessionId, command);
 
@@ -92,7 +103,6 @@ public class SshExecuteAdkTool {
 
     /**
      * 检查执行结果是否成功
-     * todo 当前检测可能未覆盖全部情况
      */
     public Boolean isExecutionSuccessful(String output){
         if (output == null || output.isEmpty()) {

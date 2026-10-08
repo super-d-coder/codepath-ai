@@ -4,8 +4,8 @@ import com.superd.api.IAgentService;
 import com.superd.api.dto.agent.AiAgentConfigResponseDTO;
 import com.superd.api.dto.agent.ChatRequestDTO;
 import com.superd.api.dto.agent.ChatResponseDTO;
-import com.superd.api.dto.ssh.CreateSessionRequestDTO;
-import com.superd.api.dto.ssh.CreateSessionResponseDTO;
+import com.superd.api.dto.agent.CreateSessionRequestDTO;
+import com.superd.api.dto.agent.CreateSessionResponseDTO;
 import com.superd.api.response.Response;
 import com.superd.domain.agent.model.valobj.AiAgentConfigTableVO;
 import com.superd.domain.agent.service.IChatService;
@@ -19,11 +19,6 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- *
- * @author xiaofuge bugstack.cn @小傅哥
- * 2026/1/20 08:23
- */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/")
@@ -135,6 +130,7 @@ public class AgentServiceController implements IAgentService {
         }
     }
 
+    //下面流式部分没看
     @RequestMapping(value = "chat_stream", method = RequestMethod.POST)
     @Override
     public ResponseBodyEmitter chatStream(@RequestBody ChatRequestDTO requestDTO) {

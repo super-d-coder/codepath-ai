@@ -5,8 +5,6 @@ import org.apache.ibatis.annotations.Mapper;
 
 /**
  * SSH连接高级配置DAO
- *
- * @author waissh dev
  */
 @Mapper
 public interface ISshConnectionConfigDAO {

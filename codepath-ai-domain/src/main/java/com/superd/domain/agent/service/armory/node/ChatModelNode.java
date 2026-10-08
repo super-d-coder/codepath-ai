@@ -51,8 +51,8 @@ public class ChatModelNode extends AbstractArmorySupport {
 
         if (toolMcpList!=null && !toolMcpList.isEmpty()){
             for (AiAgentConfigTableVO.Module.ChatModel.ToolMcp toolMcp : toolMcpList){
-                ToolMcpCreateService tooMcpCreateService = mcpClientFactory.getTooMcpCreateService(toolMcp);
-                ToolCallback[] toolCallback1 = tooMcpCreateService.buildToolCallback(toolMcp);
+                ToolMcpCreateService toolMcpCreateService = mcpClientFactory.getTooMcpCreateService(toolMcp);
+                ToolCallback[] toolCallback1 = toolMcpCreateService.buildToolCallback(toolMcp);
                 toolCallbacks.addAll(List.of(toolCallback1));
             }
         }

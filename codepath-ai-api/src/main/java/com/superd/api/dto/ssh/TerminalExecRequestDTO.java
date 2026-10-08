@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 
 /**
  * 执行命令请求
- *
- * @author waissh dev
  */
 @Data
 @Builder

@@ -9,8 +9,6 @@ import java.util.List;
 
 /**
  * 智能体聊天服务接口
- *
- * @author xiaofuge bugstack.cn @小傅哥
  * 2025/12/17 08:13
  */
 public interface IChatService {

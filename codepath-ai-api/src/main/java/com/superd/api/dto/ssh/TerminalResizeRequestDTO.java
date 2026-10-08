@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 
 /**
  * 调整终端大小请求
- *
- * @author waissh dev
  */
 @Data
 @Builder
