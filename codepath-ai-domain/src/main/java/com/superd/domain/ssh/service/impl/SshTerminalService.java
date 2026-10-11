@@ -71,11 +71,12 @@ public class SshTerminalService implements ISshTerminalDomainService {
         return entity;
     }
 
-    /** Agent 执行命令后等待输出的最大时间（ms） */
+    /**
+     * 等待命令输出的最大时间（ms）。
+     * <p><b>这是兜底值，不是期望耗时</b> —— 正常命令靠输出末尾的 prompt 检测提前返回，
+     * 只有「检测不到 prompt」时才会等满这个时间。
+     */
     private static final long COMMAND_EXEC_WAIT_MS = 60000;
-
-    /** Agent 执行命令后等待输出的检查间隔（ms） */
-    private static final long COMMAND_EXEC_CHECK_INTERVAL_MS = 100;
 
     @Override
     public String executeCommand(String sessionId, String command) {
@@ -92,8 +93,7 @@ public class SshTerminalService implements ISshTerminalDomainService {
             throw new IllegalArgumentException("终端会话不存在或已关闭");
         }
 
-        // 2. 使用 executeCommandAndWait 等待命令执行完成
-        //    超时时间 30 秒（大部分命令应该能在 30 秒内完成）
+        // 2. 等待命令执行完成：正常靠输出末尾的 prompt 检测提前返回，超时只是兜底
         String output = terminalSessionService.executeCommandAndWait(sessionId, command, waitTimeoutMs<=0?COMMAND_EXEC_WAIT_MS:waitTimeoutMs);
 
         // 3. 更新活跃时间

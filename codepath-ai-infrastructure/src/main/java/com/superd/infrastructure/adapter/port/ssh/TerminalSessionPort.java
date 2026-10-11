@@ -227,59 +227,61 @@ public class TerminalSessionPort implements ITerminalSessionPort {
             }
             log.info("[executeCommandAndWait] 命令已写入 sessionId={} command={}", sessionId, command);
 
-            // 3. 等待输出稳定（使用 wait/notifyAll 机制）
+            // 3. 等待命令执行结束
+            //    结束信号只有一个：输出末尾重新出现 Shell prompt。
+            //    timeoutMs 只是兜底 —— 正常命令靠 prompt 检测提前返回，碰不到它。
             long deadline = System.currentTimeMillis() + timeoutMs;
-            int stableCount = 0;
-            final int STABLE_THRESHOLD = 3; // 连续 3 次无新数据认为输出完成
-            final long POLL_INTERVAL = 100; // 轮询间隔 ms
+            final long POLL_INTERVAL = 100;   // 单轮 wait 的上限
+            final long STABLE_MS = 300;       // 距上次收到数据超过这么久，才去检查 prompt
+            long lastDataAt = System.currentTimeMillis();
             StringBuilder collected = new StringBuilder();
 
             while (System.currentTimeMillis() < deadline) {
+                String chunk;
                 synchronized (aiBuffer) {
-                    // 等待数据到达或超时
-                    long waitMs = Math.min(POLL_INTERVAL, deadline - System.currentTimeMillis());
-                    if (waitMs > 0 && aiBuffer.isEmpty()) {
-                        try {
-                            aiBuffer.wait(waitMs);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
+                    if (aiBuffer.isEmpty()) {
+                        long remain = deadline - System.currentTimeMillis();
+                        if (remain > 0) {
+                            try {
+                                aiBuffer.wait(Math.min(POLL_INTERVAL, remain));
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                break;
+                            }
                         }
                     }
-
-                    if (!aiBuffer.isEmpty()) {
-                        collected.append(aiBuffer);
-                        aiBuffer.setLength(0);
-                        stableCount = 0; // 有新数据，重置稳定计数
-                    } else{
-                        stableCount++;
-                    }
+                    // 取走并清空：清空是必须的 —— 否则缓冲区永远非空，"数据停没停"就判断不出来
+                    chunk = aiBuffer.toString();
+                    aiBuffer.setLength(0);
                 }
 
-                // 检查是否输出稳定
-                if (stableCount >= STABLE_THRESHOLD) {
-                    String output = collected.toString();
-                    if (!output.isEmpty() && containsPrompt(output)) {
+                if (!chunk.isEmpty()) {
+                    collected.append(chunk);
+                    lastDataAt = System.currentTimeMillis();
+                    continue;
+                }
 
-                        log.info("[executeCommandAndWait] 输出稳定(检测到prompt) sessionId={} outputLength={}",
-                                sessionId, output.length());
-                        break;
-                    }
-                    // 没有 prompt 但稳定了很久，也认为完成,应对无输出命令
-                    if (stableCount >= STABLE_THRESHOLD * 3) {
-                        log.info("[executeCommandAndWait] 输出稳定(无prompt超时) sessionId={}", sessionId);
-                        break;
-                    }
+                // 这一轮没有新数据；只有「距上次收到数据够久」才去检查 prompt
+                long idleMs = System.currentTimeMillis() - lastDataAt;
+                if (collected.length() > 0 && idleMs >= STABLE_MS && containsPrompt(collected.toString())) {
+                    log.info("[executeCommandAndWait] 检测到 prompt，命令结束 sessionId={} outputLength={} idleMs={}",
+                            sessionId, collected.length(), idleMs);
+                    break;
                 }
             }
+            if (System.currentTimeMillis() >= deadline) {
+                log.warn("[executeCommandAndWait] 到达超时兜底（未检测到 prompt）sessionId={} timeoutMs={} outputLength={}",
+                        sessionId, timeoutMs, collected.length());
+            }
+
             // 5. 清理输出
-            collected = new StringBuilder(cleanCommandOutput(collected.toString(), command));
+            String result = cleanCommandOutput(collected.toString(), command);
 
             log.info("[executeCommandAndWait] 完成 sessionId={} resultLength={} resultPreview={}",
-                    sessionId, collected.length(),
-                    collected.length() > 200 ? collected.substring(0, 200) + "..." : collected.toString());
+                    sessionId, result.length(),
+                    result.length() > 200 ? result.substring(0, 200) + "..." : result);
 
-            return collected.toString();
+            return result;
 
         } finally {
             // 6. 切换回正常模式
@@ -288,14 +290,18 @@ public class TerminalSessionPort implements ITerminalSessionPort {
     }
 
     /**
-     * 检查输出是否包含 Shell prompt 标记
+     * 判断输出末尾是否已经回到 Shell prompt —— 这是「命令执行结束」的唯一信号。
+     * <p>只看<b>最后一行</b>，且要求它以 marker 结尾：比「末尾 N 个字符里包含 marker」严格得多，
+     * 避免输出内容里恰好出现 "$ " 就被误判成命令结束。
      */
     private boolean containsPrompt(String output) {
         if (output == null || output.isEmpty()) return false;
-        // 检查最后 50 个字符中是否包含 prompt 标记
-        String tail = output.length() > 50 ? output.substring(output.length() - 50) : output;
+        int lastNewline = output.lastIndexOf('\n');
+        String lastLine = (lastNewline >= 0 ? output.substring(lastNewline + 1) : output).trim();
+        if (lastLine.isEmpty()) return false;
         for (String marker : PROMPT_MARKERS) {
-            if (tail.contains(marker)) return true;
+            String symbol = marker.trim();          // {"$ ", "# ", "% "} -> {"$", "#", "%"}
+            if (!symbol.isEmpty() && lastLine.endsWith(symbol)) return true;
         }
         return false;
     }
@@ -309,8 +315,9 @@ public class TerminalSessionPort implements ITerminalSessionPort {
     private String cleanCommandOutput(String output, String command) {
         if (output == null || output.isEmpty()) return "";
 
-        // 去除 ANSI 转义序列
-        String cleaned = output.replaceAll("\u001b\\[[0-9;]*[a-zA-Z]", "");
+        // 去除 ANSI CSI 转义序列：ESC [ 参数 中间字节 终止字节
+        // 参数类可以是 0-9 : ; < = > ? —— 原来的 [0-9;] 覆盖不到 ?，所以 ESC[?2004l 会漏掉
+        String cleaned = output.replaceAll("\u001b\\[[0-9:;<=>?]*[ -/]*[@-~]", "");
         // 去除回车符
         cleaned = cleaned.replace("\r", "");
 
