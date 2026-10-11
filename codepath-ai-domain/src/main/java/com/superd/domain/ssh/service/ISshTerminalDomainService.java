@@ -86,18 +86,4 @@ public interface ISshTerminalDomainService {
      */
     void writeTerminal(String sessionId, String input);
 
-    /**
-     * 执行命令并实时推送每个输出片段（流式执行）
-     * <p>与 executeCommand 不同，本方法在轮询到每个 chunk 时立即通过 callback 推送，
-     * 适用于需要实时展示命令执行进度的场景（如长命令、编译、安装等）。
-     *
-     * @param sessionId    会话ID
-     * @param command       命令内容
-     * @param waitTimeoutMs 最大等待时间（毫秒）
-     * @param chunkCallback 每个输出片段的回调（非空片段才回调）
-     * @return 命令执行后的完整终端输出（供调用方作为最终结果）
-     */
-    String executeCommandStreaming(String sessionId, String command, long waitTimeoutMs,
-                                   java.util.function.Consumer<String> chunkCallback);
-
 }

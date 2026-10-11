@@ -46,12 +46,6 @@ public class TerminalSessionPort implements ITerminalSessionPort {
     /** sessionId -> 是否正在执行AI命令（为true时reader写入aiCommandBuffers，否则写入outputBuffers） */
     private final Map<String, Boolean> aiCommandMode = new ConcurrentHashMap<>();
 
-    /** sessionId -> Agent 专用缓冲区（不受前端轮询影响） */
-    private final Map<String, StringBuilder> agentBuffers = new ConcurrentHashMap<>();
-
-    /** sessionId -> 是否开启 Agent 捕获模式 */
-    private final Map<String, Boolean> agentCaptureMode = new ConcurrentHashMap<>();
-
     /** sessionId -> 读取线程是否存活 */
     private final Map<String, Boolean> readerAlive = new ConcurrentHashMap<>();
 
@@ -88,8 +82,6 @@ public class TerminalSessionPort implements ITerminalSessionPort {
             inputStreams.put(sessionId, in);
             outputStreams.put(sessionId, out);
             outputBuffers.put(sessionId, new StringBuilder());
-            agentBuffers.put(sessionId, new StringBuilder());
-            agentCaptureMode.put(sessionId, false);
             activeConnectionSession.put(connectionId, sessionId);
 
             // 启动输出读取线程，持续读取 shell 输出到缓冲区
@@ -149,7 +141,7 @@ public class TerminalSessionPort implements ITerminalSessionPort {
                         attempt, WRITE_MAX_RETRIES, sessionId, e.getMessage());
                 // 最后一次重试后抛出异常
                 if (attempt == WRITE_MAX_RETRIES) {
-                    break;
+                    break   ;
                 }
                 // 短暂等待后重试
                 try {
@@ -195,42 +187,187 @@ public class TerminalSessionPort implements ITerminalSessionPort {
         }
     }
 
+    // 输出清理在 cleanCommandOutput（去 ANSI 控制码 / 去 \r / 去命令回显行 / 去结尾 prompt 行）。
+    //
+    // 遗留一件事（自己拍）：
+    //   **超时参数被架空**：调用方 SshTerminalService 传的是硬编码 30000，本方法签名里的 timeoutMs 收不到真实意图 ——
+    //   调用方以为能控制超时其实控制不了。要么让它把 waitTimeoutMs 真透下来，要么干脆删掉参数只留常量。
     @Override
     public String executeCommandAndWait(String sessionId, String command, long timeoutMs) {
-        return "";
-    }
+        StringBuilder frontBuffer = outputBuffers.get(sessionId);
+        if (frontBuffer == null) {
+            throw new IllegalArgumentException("终端会话不存在或已关闭 sessionId=" + sessionId);
+        }
 
-    @Override
-    public void setAgentCapture(String sessionId, boolean capture) {
-        StringBuilder agentBuffer = agentBuffers.get(sessionId);
-        if (agentBuffer != null) {
-            synchronized (agentBuffer) {
-                // 开启捕获前先清空旧内容
-                if (capture) {
-                    agentBuffer.setLength(0);
+        // 创建或获取AI命令独立缓冲区
+        StringBuilder aiBuffer = aiCommandBuffers.computeIfAbsent(sessionId, k -> new StringBuilder());
+
+        // 1. 切换到AI命令模式
+        aiCommandMode.put(sessionId, true);
+        synchronized (aiBuffer) {
+            aiBuffer.setLength(0); // drain 残余数据
+        }
+        // 也 drain 前端缓冲区，避免混淆
+        synchronized (frontBuffer) {
+            frontBuffer.setLength(0);
+        }
+
+        try {
+            // 2. 写入命令 + 换行符
+            String fullCommand = command.endsWith("\n") ? command : command + "\n";
+            try {
+                OutputStream out = outputStreams.get(sessionId);
+                if (out == null) {
+                    throw new IllegalStateException("终端输出流不可用 sessionId=" + sessionId);
+                }
+                out.write(fullCommand.getBytes(StandardCharsets.UTF_8));
+                out.flush();
+            } catch (IOException e) {
+                throw new RuntimeException("写入终端失败: " + e.getMessage(), e);
+            }
+            log.info("[executeCommandAndWait] 命令已写入 sessionId={} command={}", sessionId, command);
+
+            // 3. 等待输出稳定（使用 wait/notifyAll 机制）
+            long deadline = System.currentTimeMillis() + timeoutMs;
+            int stableCount = 0;
+            final int STABLE_THRESHOLD = 3; // 连续 3 次无新数据认为输出完成
+            final long POLL_INTERVAL = 100; // 轮询间隔 ms
+            StringBuilder collected = new StringBuilder();
+
+            while (System.currentTimeMillis() < deadline) {
+                synchronized (aiBuffer) {
+                    // 等待数据到达或超时
+                    long waitMs = Math.min(POLL_INTERVAL, deadline - System.currentTimeMillis());
+                    if (waitMs > 0 && aiBuffer.isEmpty()) {
+                        try {
+                            aiBuffer.wait(waitMs);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
+                    }
+
+                    if (!aiBuffer.isEmpty()) {
+                        collected.append(aiBuffer);
+                        aiBuffer.setLength(0);
+                        stableCount = 0; // 有新数据，重置稳定计数
+                    } else{
+                        stableCount++;
+                    }
+                }
+
+                // 检查是否输出稳定
+                if (stableCount >= STABLE_THRESHOLD) {
+                    String output = collected.toString();
+                    if (!output.isEmpty() && containsPrompt(output)) {
+
+                        log.info("[executeCommandAndWait] 输出稳定(检测到prompt) sessionId={} outputLength={}",
+                                sessionId, output.length());
+                        break;
+                    }
+                    // 没有 prompt 但稳定了很久，也认为完成,应对无输出命令
+                    if (stableCount >= STABLE_THRESHOLD * 3) {
+                        log.info("[executeCommandAndWait] 输出稳定(无prompt超时) sessionId={}", sessionId);
+                        break;
+                    }
                 }
             }
+            // 5. 清理输出
+            collected = new StringBuilder(cleanCommandOutput(collected.toString(), command));
+
+            log.info("[executeCommandAndWait] 完成 sessionId={} resultLength={} resultPreview={}",
+                    sessionId, collected.length(),
+                    collected.length() > 200 ? collected.substring(0, 200) + "..." : collected.toString());
+
+            return collected.toString();
+
+        } finally {
+            // 6. 切换回正常模式
+            aiCommandMode.put(sessionId, false);
         }
-        agentCaptureMode.put(sessionId, capture);
-        log.debug("Agent 捕获模式: sessionId={}, capture={}", sessionId, capture);
     }
 
-    @Override
-    public String readAgentBuffer(String sessionId) {
-        StringBuilder agentBuffer = agentBuffers.get(sessionId);
-        if (agentBuffer == null) {
-            return "";
+    /**
+     * 检查输出是否包含 Shell prompt 标记
+     */
+    private boolean containsPrompt(String output) {
+        if (output == null || output.isEmpty()) return false;
+        // 检查最后 50 个字符中是否包含 prompt 标记
+        String tail = output.length() > 50 ? output.substring(output.length() - 50) : output;
+        for (String marker : PROMPT_MARKERS) {
+            if (tail.contains(marker)) return true;
         }
-        synchronized (agentBuffer) {
-            if (agentBuffer.length() == 0) {
-                return "";
+        return false;
+    }
+
+    /**
+     * 清理命令输出：
+     * - 去除第一行命令回显
+     * - 去除末尾 prompt 行
+     * - 去除 ANSI 控制序列
+     */
+    private String cleanCommandOutput(String output, String command) {
+        if (output == null || output.isEmpty()) return "";
+
+        // 去除 ANSI 转义序列
+        String cleaned = output.replaceAll("\u001b\\[[0-9;]*[a-zA-Z]", "");
+        // 去除回车符
+        cleaned = cleaned.replace("\r", "");
+
+        // 按行分割
+        String[] lines = cleaned.split("\n");
+        java.util.List<String> resultLines = new java.util.ArrayList<>();
+
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String trimmedLine = line.trim();
+
+            // 跳过空行
+            if (trimmedLine.isEmpty()) continue;
+
+            // 跳过第一行如果是命令回显
+            if (resultLines.isEmpty() && isCommandEcho(trimmedLine, command)) {
+                continue;
             }
-            String output = agentBuffer.toString();
-            agentBuffer.setLength(0);
-            return output;
+
+            // 跳过末尾 prompt 行
+            if (i == lines.length - 1 && isPromptLine(trimmedLine)) {
+                continue;
+            }
+
+            resultLines.add(line);
         }
+
+        return String.join("\n", resultLines).trim();
     }
 
+    /**
+     * 判断是否为命令回显行
+     */
+    private boolean isCommandEcho(String line, String command) {
+        String cmd = command.trim();
+        // 精确匹配或前缀匹配（Shell 有时会加 prompt 前缀）
+        if (line.equals(cmd)) return true;
+        // 处理带 prompt 前缀的情况，如 "ubuntu@host:~$ cat /etc/os-release"
+        if (line.endsWith(cmd)) return true;
+        // 命令很短时只做精确匹配，避免误杀
+        if (cmd.length() > 10 && line.contains(cmd)) return true;
+        return false;
+    }
+
+    /**
+     * 判断是否为 prompt 行（如 "ubuntu@VM-0-7-ubuntu:~$"）
+     */
+    private boolean isPromptLine(String line) {
+        for (String marker : PROMPT_MARKERS) {
+            if (line.endsWith(marker.trim())) return true;
+        }
+        // 匹配 user@host:dir$ 格式
+        if (line.matches(".*@.*:[^$]*\\$\\s*$")) return true;
+        if (line.matches(".*@.*:[^#]*#\\s*$")) return true;
+        return false;
+    }
+    
     @Override
     public void resize(String sessionId, int cols, int rows) {
         ChannelShell channel = channels.get(sessionId);
@@ -270,59 +407,61 @@ public class TerminalSessionPort implements ITerminalSessionPort {
         readerAlive.put(sessionId, true);
         Thread reader = new Thread(() -> {
             byte[] buf = new byte[4096];
-            int consecutiveErrors = 0;
-            
             try {
                 int len;
-                while (true) {
-                    try {
-                        if ((len = in.read(buf)) == -1) {
-                            // in.read() 返回 -1，说明 shell channel EOF
-                            log.warn("终端 Shell Channel EOF sessionId={}", sessionId);
-                            break;
+                while ((len = in.read(buf)) != -1) {
+                    String text = new String(buf, 0, len, StandardCharsets.UTF_8);
+                    // 根据模式决定写入哪个缓冲区
+                    Boolean aiMode = aiCommandMode.get(sessionId);
+                    if (Boolean.TRUE.equals(aiMode)) {
+                        // AI命令模式：写入独立缓冲区
+                        StringBuilder aiBuffer = aiCommandBuffers.get(sessionId);
+                        if (aiBuffer != null) {
+                            synchronized (aiBuffer) {
+                                aiBuffer.append(text);
+                                aiBuffer.notifyAll(); // 通知等待的 executeCommandAndWait
+                            }
                         }
-                        
-                        consecutiveErrors = 0; // 重置错误计数
-                        
-                        String text = new String(buf, 0, len, StandardCharsets.UTF_8);
+                        // 同时也写入前端缓冲区，让前端能看到命令回显
+                        StringBuilder frontBuffer = outputBuffers.get(sessionId);
+                        if (frontBuffer != null) {
+                            synchronized (frontBuffer) {
+                                frontBuffer.append(text);
+                            }
+                        }
+                    } else {
+                        // 正常模式：写入前端缓冲区
                         StringBuilder buffer = outputBuffers.get(sessionId);
                         if (buffer != null) {
                             synchronized (buffer) {
                                 buffer.append(text);
                             }
                         }
-                        // 如果开启了 Agent 捕获模式，同时写入 agent 专用缓冲区
-                        StringBuilder agentBuffer = agentBuffers.get(sessionId);
-                        Boolean capture = agentCaptureMode.get(sessionId);
-                        if (agentBuffer != null && Boolean.TRUE.equals(capture)) {
-                            synchronized (agentBuffer) {
-                                agentBuffer.append(text);
-                            }
-                        }
-                    } catch (java.net.SocketTimeoutException e) {
-                        // SocketTimeout 不是断连，重试即可
-                        log.debug("终端读取超时（非断连），继续读取 sessionId={}", sessionId);
-                    } catch (IOException e) {
-                        consecutiveErrors++;
-                        
-                        ChannelShell ch = channels.get(sessionId);
-                        // channel 还活着说明可能是临时 I/O 问题，尝试恢复
-                        if (ch != null && ch.isConnected() && consecutiveErrors < 3) {
-                            log.warn("终端读取I/O异常({}/3)，继续尝试 sessionId={} reason={}", 
-                                    consecutiveErrors, sessionId, e.getMessage());
-                            Thread.sleep(100); // 短暂等待后重试
-                            continue;
-                        }
-                        
-                        // 超过重试次数或通道已断开
-                        log.warn("终端输出读取异常 sessionId={} reason={} consecutiveErrors={}", 
-                                sessionId, e.getMessage(), consecutiveErrors);
-                        break;
                     }
                 }
-            } catch (InterruptedException e) {
-                log.info("终端读取线程被中断 sessionId={}", sessionId);
-                Thread.currentThread().interrupt();
+                // in.read() 返回 -1，说明 shell channel EOF
+                log.warn("终端 Shell Channel EOF sessionId={}", sessionId);
+            } catch (java.net.SocketTimeoutException e) {
+                // SocketTimeout 不是断连，重试即可——但实际不应到这里了（setTimeout(0)）
+                // 保留作为防御性处理
+                log.debug("终端读取超时（非断连），继续读取 sessionId={}", sessionId);
+                InputStream inRef = inputStreams.get(sessionId);
+                if (inRef != null) {
+                    startOutputReader(sessionId, inRef);
+                }
+                return; // 当前线程退出，新线程已接替
+            } catch (IOException e) {
+                ChannelShell ch = channels.get(sessionId);
+                // channel 还活着说明不是真正的断连，可能是临时 I/O 问题，尝试重启
+                if (ch != null && ch.isConnected()) {
+                    log.warn("终端读取I/O异常但channel仍连接，重启reader sessionId={} reason={}", sessionId, e.getMessage());
+                    InputStream inRef = inputStreams.get(sessionId);
+                    if (inRef != null) {
+                        startOutputReader(sessionId, inRef);
+                    }
+                    return;
+                }
+                log.debug("终端输出读取异常 sessionId={} reason={}", sessionId, e.getMessage());
             } finally {
                 readerAlive.put(sessionId, false);
 
@@ -369,8 +508,6 @@ public class TerminalSessionPort implements ITerminalSessionPort {
         }
 
         outputBuffers.remove(sessionId);
-        agentBuffers.remove(sessionId);
-        agentCaptureMode.remove(sessionId);
         readerAlive.remove(sessionId);
     }
 
